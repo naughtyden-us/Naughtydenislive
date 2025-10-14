@@ -2487,7 +2487,7 @@ const App = () => {
                         <div className="relative z-10 text-center">
                             <div className="mb-6">
                                 <div className="mb-4">
-                                    <img src="/logo.png" alt="Naughty Den Logo" className="w-24 h-24 mx-auto object-contain" />
+                                    <img src="/logo.png" alt="Naughty Den Logo" className="w-40 h-auto mx-auto object-contain" />
                                 </div>
                                 <h2 className="text-2xl font-bold text-white mb-2">Creator Studio</h2>
                                 <p className="text-gray-300 text-lg">
