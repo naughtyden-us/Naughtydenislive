@@ -21,10 +21,10 @@ const CreatorCard: React.FC<CreatorCardProps> = ({ creator, onViewProfile, onLik
   return (
     <div
       onClick={() => onViewProfile(creator)}
-      className="relative overflow-hidden rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 cursor-pointer"
+      className="relative overflow-hidden rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 cursor-pointer h-[400px] w-full flex flex-col"
     >
-      <div>
-        <img src={creator.image} alt={creator.name} width={400} height={400} className="w-full h-auto object-cover" />
+      <div className="aspect-square overflow-hidden">
+        <img src={creator.image} alt={creator.name} width={400} height={400} className="w-full h-full object-cover" />
       </div>
       <div className="absolute top-2 right-2 flex space-x-2">
         {creator.isAd && (
@@ -45,7 +45,7 @@ const CreatorCard: React.FC<CreatorCardProps> = ({ creator, onViewProfile, onLik
           <span className="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded-full uppercase">Unverified</span>
         )}
       </div>
-      <div className="p-4 bg-gray-900 text-white">
+      <div className="p-4 bg-gray-900 text-white flex-1 flex flex-col">
         <div className="flex justify-between items-center mb-2">
           <h3 className="text-lg font-semibold">{creator.name}</h3>
           <div className="flex items-center space-x-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleLikeClick(); }}>
@@ -76,7 +76,7 @@ const CreatorCard: React.FC<CreatorCardProps> = ({ creator, onViewProfile, onLik
           <span>${creator.price}</span>
           <span className="text-gray-400">/hour</span>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 mt-auto">
           <button className="flex-1 py-2 rounded-lg border border-pink-600 text-pink-600 hover:bg-pink-600 hover:text-white transition-colors">
             Chat
           </button>

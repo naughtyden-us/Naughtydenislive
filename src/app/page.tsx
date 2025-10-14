@@ -201,10 +201,10 @@ const CreatorCard: React.FC<{ creator: Creator; onViewProfile: (creator: Creator
     return (
         <div
             onClick={() => onViewProfile(creator)}
-            className="relative overflow-hidden rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 cursor-pointer"
+            className="relative overflow-hidden rounded-xl shadow-lg transform transition-transform duration-300 hover:scale-105 cursor-pointer h-[400px] w-full flex flex-col"
         >
-            <div>
-                <img src={creator.image} alt={creator.name} width={400} height={400} className="w-full h-auto object-cover" />
+            <div className="aspect-square overflow-hidden">
+                <img src={creator.image} alt={creator.name} width={400} height={400} className="w-full h-full object-cover" />
             </div>
             <div className="absolute top-2 right-2 flex space-x-2">
                 {creator.isAd && (
@@ -225,7 +225,7 @@ const CreatorCard: React.FC<{ creator: Creator; onViewProfile: (creator: Creator
                     <span className="text-xs font-semibold bg-red-600 text-white px-2 py-1 rounded-full uppercase">Unverified</span>
                 )}
             </div>
-            <div className="p-4 bg-gray-900 text-white">
+            <div className="p-4 bg-gray-900 text-white flex-1 flex flex-col">
                 <div className="flex justify-between items-center mb-2">
                     <h3 className="text-lg font-semibold">{creator.name}</h3>
                     <div className="flex items-center space-x-1 cursor-pointer" onClick={(e) => { e.stopPropagation(); handleLikeClick(); }}>
@@ -256,7 +256,7 @@ const CreatorCard: React.FC<{ creator: Creator; onViewProfile: (creator: Creator
                     <span>${creator.price}</span>
                     <span className="text-gray-400">/hour</span>
                 </div>
-                <div className="flex space-x-2">
+                <div className="flex space-x-2 mt-auto">
                     <button className="flex-1 py-2 rounded-lg border border-pink-600 text-pink-600 hover:bg-pink-600 hover:text-white transition-colors">
                         Chat
                     </button>
@@ -646,8 +646,8 @@ const CreatorProfile = ({ creator, onClose }: { creator: Creator; onClose: () =>
                             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                                 {/* Dynamically render recent photos */}
                                 {[...Array(4)].map((_, index) => (
-                                    <div key={index} className="relative rounded-lg overflow-hidden cursor-pointer" onClick={() => setEnlargedImage(creator.image)}>
-                                        <img src={creator.image} alt="Recent photo" width={200} height={200} className="w-full h-auto object-cover" />
+                                    <div key={index} className="relative rounded-lg overflow-hidden cursor-pointer aspect-square" onClick={() => setEnlargedImage(creator.image)}>
+                                        <img src={creator.image} alt="Recent photo" width={200} height={200} className="w-full h-full object-cover" />
                                         <span className="absolute top-2 left-2 text-xs font-semibold bg-pink-600 text-white px-2 py-1 rounded-full uppercase">New</span>
                                         <span className="absolute bottom-2 left-2 text-sm font-bold text-white px-1 py-0.5 rounded-full">#{index + 1}</span>
                                     </div>
@@ -1201,7 +1201,7 @@ const CreatorsPage = ({ creators, onViewProfile, onLike, onClose }: { creators: 
                     </div>
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
                     {creators.map((creator) => (
                         <CreatorCard key={creator.id} creator={creator} onViewProfile={onViewProfile} onLike={onLike} />
                     ))}
@@ -1460,7 +1460,7 @@ const CreatorDashboard = ({ creators, onViewProfile, onLike, onClose, db, onOpen
                 </div>
 
                 {/* Creators Grid */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
                     {filteredCreators.map((creator) => (
                         <CreatorCard key={creator.id} creator={creator} onViewProfile={onViewProfile} onLike={onLike} />
                     ))}
@@ -1879,6 +1879,7 @@ const App = () => {
     const [selectedCreator, setSelectedCreator] = useState<Creator | null>(null);
     const [selectedPage, setSelectedPage] = useState('home');
     const [showCreatorStudio, setShowCreatorStudio] = useState(false);
+    const [showCreatorStudioPopup, setShowCreatorStudioPopup] = useState(false);
     const [auth, setAuth] = useState<any>(null);
     const [db, setDb] = useState<any>(null);
     const [firebaseApp, setFirebaseApp] = useState<any>(null);
@@ -2033,6 +2034,19 @@ const App = () => {
             } catch (error) {
                 console.error("Logout failed:", error);
             }
+        }
+    };
+
+    const handleCreatorStudioAccess = () => {
+        if (!user) {
+            // User not logged in - show popup
+            setShowCreatorStudioPopup(true);
+        } else if (!userProfile?.isCreator) {
+            // User logged in but not a creator - show popup
+            setShowCreatorStudioPopup(true);
+        } else {
+            // User is logged in and is a creator - open studio
+            setShowCreatorStudio(true);
         }
     };
 
@@ -2203,7 +2217,7 @@ const App = () => {
                         <div className="hidden md:flex items-center space-x-2">
                             {user && userProfile?.isCreator && (
                                 <button 
-                                    onClick={() => setShowCreatorStudio(true)}
+                                    onClick={handleCreatorStudioAccess}
                                     className="px-3 py-2 rounded-md bg-gradient-to-r from-pink-600 to-purple-600 text-white font-semibold hover:from-pink-700 hover:to-purple-700 transition-all duration-200 text-sm shadow-md"
                                 >
                                     Creator Studio
@@ -2290,7 +2304,7 @@ const App = () => {
                                 </svg>
                                 <span className="text-lg font-medium">Creators</span>
                             </a>
-                            <a href="#" onClick={() => { setShowCreatorStudio(true); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-300">
+                            <a href="#" onClick={() => { handleCreatorStudioAccess(); setIsMobileMenuOpen(false); }} className="flex items-center space-x-3 py-3 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-gray-800/50 transition-all duration-300">
                                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6A2.25 2.25 0 016 3.75h2.25A2.25 2.25 0 0110.5 6v2.25a2.25 2.25 0 01-2.25 2.25H6a2.25 2.25 0 01-2.25-2.25V6zM3.75 15.75A2.25 2.25 0 016 13.5h2.25a2.25 2.25 0 012.25 2.25V18a2.25 2.25 0 01-2.25 2.25H6A2.25 2.25 0 013.75 18v-2.25zM13.5 6a2.25 2.25 0 012.25-2.25H18A2.25 2.25 0 0120.25 6v2.25A2.25 2.25 0 0118 10.5h-2.25a2.25 2.25 0 01-2.25-2.25V6zM13.5 15.75a2.25 2.25 0 012.25-2.25H18a2.25 2.25 0 012.25 2.25V18A2.25 2.25 0 0118 20.25h-2.25A2.25 2.25 0 0113.5 18v-2.25z" />
                                 </svg>
@@ -2368,7 +2382,7 @@ const App = () => {
                         Create stunning and unique content. Join thousands of photographers worldwide. Find the perfect image for your next project.
                     </p>
                     <div className="flex justify-center space-x-4">
-                        <button onClick={() => setShowCreatorStudio(true)} className="px-6 py-3 rounded-full bg-pink-600 hover:bg-pink-700 transition-colors">
+                        <button onClick={handleCreatorStudioAccess} className="px-6 py-3 rounded-full bg-pink-600 hover:bg-pink-700 transition-colors">
                             Creator Studio &rarr;
                         </button>
                         <button onClick={() => setSelectedPage('browser-gallery')} className="px-6 py-3 rounded-full border border-gray-400 text-gray-300 hover:text-white hover:border-white transition-colors">
@@ -2387,7 +2401,7 @@ const App = () => {
                         <a href="#" onClick={() => setSelectedPage('creators')} className="hover:underline">Browse all creators</a>
                     </div>
                 </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
                     {(liveAudience.length > 0 ? liveAudience : creators).map((creator) => (
                         <CreatorCard key={creator.id || creator.uid} creator={creator} onViewProfile={setSelectedCreator} onLike={handleLike} />
                     ))}
@@ -2449,6 +2463,66 @@ const App = () => {
                     onClose={() => setIsVeriffKYCModalOpen(false)} 
                     onVerificationComplete={handleVerificationComplete} 
                 />
+            )}
+            
+            {/* Creator Studio Neon Popup */}
+            {showCreatorStudioPopup && (
+                <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+                    <div className="relative bg-gray-900 border-2 border-pink-500 rounded-2xl p-8 max-w-md w-full mx-4 shadow-2xl">
+                        {/* Neon glow effect */}
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500/20 via-purple-500/20 to-pink-500/20 rounded-2xl blur-sm"></div>
+                        <div className="absolute inset-0 bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-pink-500/10 rounded-2xl"></div>
+                        
+                        {/* Close button */}
+                        <button 
+                            onClick={() => setShowCreatorStudioPopup(false)}
+                            className="absolute top-4 right-4 text-gray-400 hover:text-white transition-colors"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                        
+                        {/* Content */}
+                        <div className="relative z-10 text-center">
+                            <div className="mb-6">
+                                <div className="mb-4">
+                                    <img src="/logo.png" alt="Naughty Den Logo" className="w-24 h-24 mx-auto object-contain" />
+                                </div>
+                                <h2 className="text-2xl font-bold text-white mb-2">Creator Studio</h2>
+                                <p className="text-gray-300 text-lg">
+                                    {!user ? "Already mine? Log in. Not yet? Let's change that — sign up." : "Ready to become a creator? Let's get you started!"}
+                                </p>
+                            </div>
+                            
+                            <div className="space-y-3">
+                                {!user ? (
+                                    <>
+                                        <button 
+                                            onClick={() => { setShowCreatorStudioPopup(false); setIsLoginModal(true); setLoginModalInitialForm('login'); }}
+                                            className="w-full py-3 px-6 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-pink-500/25"
+                                        >
+                                            Log In
+                                        </button>
+                                        <button 
+                                            onClick={() => { setShowCreatorStudioPopup(false); setIsLoginModal(true); setLoginModalInitialForm('signup'); }}
+                                            className="w-full py-3 px-6 border-2 border-pink-500 text-pink-500 hover:bg-pink-500 hover:text-white font-semibold rounded-lg transition-all duration-200"
+                                        >
+                                            Sign Up
+                                        </button>
+                                    </>
+                                ) : (
+                                    <button 
+                                        onClick={() => { setShowCreatorStudioPopup(false); setSelectedPage('my-profile'); }}
+                                        className="w-full py-3 px-6 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg shadow-pink-500/25"
+                                    >
+                                        Become a Creator
+                                    </button>
+                                )}
+                            </div>
+                        </div>
+                    </div>
+                </div>
             )}
             </div>
         </ErrorBoundary>

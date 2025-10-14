@@ -694,9 +694,9 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
 
 
               {/* Creators Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
               {creators.map((creator) => (
-                <div key={creator.id} className="bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors">
+                <div key={creator.id} className="bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors h-[400px] w-full flex flex-col">
                   <div className="relative">
                       <div className="aspect-square bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
                         {creator.image || creator.photoURL ? (
@@ -722,7 +722,7 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
                       </button>
                     </div>
                   </div>
-                  <div className="p-4">
+                  <div className="p-4 flex-1 flex flex-col">
                     <div className="flex items-center space-x-2 mb-2">
                       <h3 className="font-semibold text-white">{creator.displayName || 'Creator'}</h3>
                       <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
@@ -756,7 +756,7 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
                         </>
                       )}
                     </div>
-                    <button className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold py-2 rounded-lg transition-colors">
+                    <button className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold py-2 rounded-lg transition-colors mt-auto">
                       Start Private Chat
                     </button>
                   </div>
