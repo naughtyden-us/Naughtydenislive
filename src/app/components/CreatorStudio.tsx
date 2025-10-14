@@ -2,6 +2,8 @@
 
 import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, addDoc, query, orderBy, onSnapshot, doc, updateDoc, increment, where } from 'firebase/firestore';
+import CreatorCard from './CreatorCard';
+import { Creator as UICreator } from './types';
 
 interface CreatorStudioProps {
   onClose: () => void;
@@ -34,6 +36,29 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
   const [newPostLocation, setNewPostLocation] = useState('');
   const [isPosting, setIsPosting] = useState(false);
   const [creators, setCreators] = useState<any[]>([]);
+  const [showPersonalized, setShowPersonalized] = useState(true);
+
+  // Map Firestore creators to UI CreatorCard model
+  const mappedCreators: UICreator[] = creators.map((c: any, index: number) => ({
+    id: index, // using index as stable key within this view
+    name: c.displayName || c.name || 'Creator',
+    image: c.image || c.photoURL || 'https://images.unsplash.com/photo-1630280717628-7d0d071cf2e3?q=80&w=400&auto=format&fit=crop',
+    likes: typeof c.likes === 'number' ? c.likes : 0,
+    rating: typeof c.rating === 'number' ? c.rating : 4.8,
+    price: typeof c.price === 'number' ? c.price : 30,
+    isAd: false,
+    type: 'Subscription',
+    isVerified: !!c.isVerified,
+    verificationStatus: c.verificationStatus || 'pending'
+  }));
+
+  const handleViewProfileFromForYou = (_creator: UICreator) => {
+    // Placeholder: could route to profile view when available
+  };
+
+  const handleLikeForYou = (creatorIndex: number) => {
+    setCreators((prev: any[]) => prev.map((c: any, idx: number) => idx === creatorIndex ? { ...c, likes: (c.likes || 0) + 1 } : c));
+  };
 
   // Fetch posts from Firestore
   useEffect(() => {
@@ -61,15 +86,23 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
     return () => unsubscribe();
   }, [db]);
 
-  // Fetch creators for For You section (same as main page)
+  // Fetch creators for For You section (personalized by interests when available)
   useEffect(() => {
     if (!db) return;
 
+    const userInterests: string[] = Array.isArray(userProfile?.categories) ? userProfile?.categories : [];
     const profilesRef = collection(db, 'profiles');
-    const q = query(profilesRef, where('isCreator', '==', true));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const creatorsData = snapshot.docs.map(doc => {
+    let qRef: any;
+    if (showPersonalized && userInterests.length > 0) {
+      const interestsForQuery = userInterests.slice(0, 10);
+      qRef = query(profilesRef, where('isCreator', '==', true), where('categories', 'array-contains-any', interestsForQuery));
+    } else {
+      qRef = query(profilesRef, where('isCreator', '==', true));
+    }
+
+    const unsubscribe = onSnapshot(qRef, (snapshot: any) => {
+      const creatorsData = snapshot.docs.map((doc: any) => {
         const data = doc.data();
         return {
           id: doc.id,
@@ -87,7 +120,6 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
           categories: data.categories || [],
           email: data.email || '',
           uid: data.uid || doc.id,
-          // Additional fields for For You section
           photoURL: data.photoURL,
           views: data.views || Math.floor(Math.random() * 1000) + 100
         };
@@ -96,7 +128,7 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
     });
 
     return () => unsubscribe();
-  }, [db]);
+  }, [db, showPersonalized, userProfile]);
 
   const handlePost = async () => {
     if (!newPostContent.trim() || !user || !userProfile || !db) return;
@@ -677,6 +709,13 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                   </svg>
                 </div>
+                <button
+                  onClick={() => setShowPersonalized(prev => !prev)}
+                  className={`px-3 py-2 rounded-lg text-sm font-medium border ${showPersonalized ? 'border-pink-600 text-white bg-pink-600' : 'border-gray-600 text-gray-300 hover:bg-gray-700'}`}
+                  title={showPersonalized ? 'Showing Personalized' : 'Showing All'}
+                >
+                  {showPersonalized ? 'Personalized' : 'All Creators'}
+                </button>
                 <div className="flex space-x-2">
                   <button className="p-2 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
                     <svg className="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -693,74 +732,15 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
             </div>
 
 
-              {/* Creators Grid */}
+            {/* Creators Grid (reusing Featured Creators card) */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 items-start">
-              {creators.map((creator) => (
-                <div key={creator.id} className="bg-gray-900 rounded-xl overflow-hidden hover:bg-gray-800 transition-colors h-[400px] w-full flex flex-col">
-                  <div className="relative">
-                      <div className="aspect-square bg-gradient-to-br from-pink-500 to-purple-600 flex items-center justify-center">
-                        {creator.image || creator.photoURL ? (
-                          <img 
-                            src={creator.image || creator.photoURL} 
-                            alt={creator.displayName} 
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <span className="text-white text-4xl font-bold">
-                            {creator.displayName?.charAt(0)?.toUpperCase() || 'C'}
-                          </span>
-                        )}
-                      </div>
-                    <div className="absolute top-2 left-2">
-                      <span className="bg-green-500 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                        LIVE
-                      </span>
-                    </div>
-                    <div className="absolute top-2 right-2">
-                      <button className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full font-semibold">
-                        Private Chat
-                      </button>
-                    </div>
-                  </div>
-                  <div className="p-4 flex-1 flex flex-col">
-                    <div className="flex items-center space-x-2 mb-2">
-                      <h3 className="font-semibold text-white">{creator.displayName || 'Creator'}</h3>
-                      <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    </div>
-                        <div className="flex items-center space-x-4 text-sm text-gray-400 mb-3">
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                            </svg>
-                            <span>{creator.views || Math.floor(Math.random() * 1000) + 100}</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-                              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
-                            </svg>
-                            <span>{creator.rating || 4.8}</span>
-                          </div>
-                        </div>
-                    <div className="flex flex-wrap gap-1 mb-3">
-                      {creator.categories && creator.categories.length > 0 ? (
-                        creator.categories.slice(0, 2).map((category: string, index: number) => (
-                          <span key={index} className="bg-red-600 text-white text-xs px-2 py-1 rounded-full">
-                            {category}
-                          </span>
-                        ))
-                      ) : (
-                        <>
-                          <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-full">Soul Mate</span>
-                          <span className="bg-red-600 text-white text-xs px-2 py-1 rounded-full">Exclusive</span>
-                        </>
-                      )}
-                    </div>
-                    <button className="w-full bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-700 hover:to-purple-700 text-white font-semibold py-2 rounded-lg transition-colors mt-auto">
-                      Start Private Chat
-                    </button>
-                  </div>
-                </div>
+              {mappedCreators.map((creator) => (
+                <CreatorCard
+                  key={creator.id}
+                  creator={creator}
+                  onViewProfile={handleViewProfileFromForYou}
+                  onLike={handleLikeForYou}
+                />
               ))}
             </div>
 
