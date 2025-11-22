@@ -85,11 +85,11 @@ const DiagnosticTool: React.FC = () => {
           
           // Try upload with timeout
           const uploadPromise = uploadBytes(testRef, testBlob);
-          const timeoutPromise = new Promise((_, reject) => 
+          const timeoutPromise = new Promise<never>((_, reject) => 
             setTimeout(() => reject(new Error('Upload timeout after 10 seconds')), 10000)
           );
           
-          const snapshot = await Promise.race([uploadPromise, timeoutPromise]);
+          const snapshot = await Promise.race([uploadPromise, timeoutPromise]) as Awaited<ReturnType<typeof uploadBytes>>;
           addDiagnostic('✅ Upload completed successfully!');
           addDiagnostic(`📁 Uploaded to: ${snapshot.ref.fullPath}`);
           

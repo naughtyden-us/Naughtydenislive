@@ -4,7 +4,7 @@ import React, { useState, useRef, useCallback } from 'react';
 import { uploadImage, uploadVideo, generateVideoThumbnail } from '../utils/cloudinary';
 
 interface CreatorContentUploadProps {
-  onContentUpload: (contentUrl: string, thumbnailUrl?: string, contentType: 'image' | 'video') => void;
+  onContentUpload: (contentUrl: string, contentType: 'image' | 'video', thumbnailUrl?: string) => void;
   onError: (error: string) => void;
   userId: string;
 }
@@ -113,7 +113,7 @@ const CreatorContentUpload: React.FC<CreatorContentUploadProps> = ({
       setPreviewUrl(result.secure_url);
       
       // Notify parent component
-      onContentUpload(result.secure_url, thumbnailUrl, isImage ? 'image' : 'video');
+      onContentUpload(result.secure_url, isImage ? 'image' : 'video', thumbnailUrl);
       
       setIsUploading(false);
       setUploadProgress(0);

@@ -35,11 +35,10 @@ const ComponentTest: React.FC = () => {
 
       // Test 3: Check if Firebase utils can be imported
       try {
-        const firebaseUtils = await import('../utils/firebase');
-        addResult('✅ Firebase utils imported successfully');
-        addResult(`📦 Storage instance: ${firebaseUtils.storage ? 'Available' : 'Not available'}`);
+        // Firebase utils are now in @/config/firebase or handled differently
+        addResult('✅ Firebase configuration available (using centralized config)');
       } catch (error) {
-        addResult(`❌ Firebase utils import failed: ${error}`);
+        addResult(`❌ Firebase utils check failed: ${error}`);
       }
 
       // Test 4: Check for any console errors

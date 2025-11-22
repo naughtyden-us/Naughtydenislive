@@ -3,18 +3,35 @@
 import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+// Declare Veriff types for dynamic script loading
+declare global {
+  interface Window {
+    Veriff?: any;
+    veriffSDK?: any;
+  }
+}
+
 export default function VerifyKYCPage() {
   const router = useRouter();
 
   useEffect(() => {
     const startVerification = async () => {
       try {
-        const veriff = Veriff({
+        if (!window.Veriff) {
+          throw new Error('Veriff SDK not loaded');
+        }
+        const veriff = window.Veriff({
           host: 'https://stationapi.veriff.com',
           apiKey: 'e1d937eb-266f-4fc4-8489-8f69a7f39a7d',
           parentId: 'veriff-root',
-          onSession: function(err, response) {
-            window.veriffSDK.createVeriffFrame({ url: response.verification.url });
+          onSession: function(err: any, response: any) {
+            if (err) {
+              console.error('Veriff session error:', err);
+              return;
+            }
+            if (window.veriffSDK && response?.verification?.url) {
+              window.veriffSDK.createVeriffFrame({ url: response.verification.url });
+            }
           },
         });
 

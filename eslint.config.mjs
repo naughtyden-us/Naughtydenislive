@@ -9,6 +9,13 @@ export default tseslint.config(
   eslint.configs.recommended,
   ...compat.extends('plugin:@next/next/recommended', 'plugin:@next/next/core-web-vitals'),
   {
+    ignores: [
+      '.next/**',
+      'node_modules/**',
+      '*.config.js',
+      '*.config.mjs',
+      'public/sw.js',
+    ],
     rules: {
       '@typescript-eslint/no-explicit-any': 'off',
     },

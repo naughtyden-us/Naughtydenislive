@@ -122,7 +122,7 @@ export const useCreators = (
           if (filters?.search) {
             filteredCreators = creatorsData.filter(creator =>
               creator.displayName.toLowerCase().includes(filters.search!.toLowerCase()) ||
-              creator.bio.toLowerCase().includes(filters.search!.toLowerCase())
+              (creator.bio && creator.bio.toLowerCase().includes(filters.search!.toLowerCase()))
             );
           }
 

@@ -36,7 +36,7 @@ const UploadTest: React.FC = () => {
     console.log('Thumbnail uploaded to Cloudinary:', thumbnailUrl);
   };
 
-  const handleCreatorContentUpload = (contentUrl: string, thumbnailUrl?: string, contentType: 'image' | 'video') => {
+  const handleCreatorContentUpload = (contentUrl: string, contentType: 'image' | 'video', thumbnailUrl?: string) => {
     setCreatorContentUrl(contentUrl);
     setCreatorThumbnailUrl(thumbnailUrl || '');
     setCreatorContentType(contentType);
