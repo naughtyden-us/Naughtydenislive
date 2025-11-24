@@ -96,7 +96,11 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
     newMessages: true,
     newFollowers: true,
     tipsGifts: true,
+    soundEnabled: true,
+    emailDigest: 'daily', // 'none', 'daily', 'weekly'
+    quietHours: { enabled: false, start: '22:00', end: '08:00' },
   });
+  const [notificationSaveStatus, setNotificationSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [privacySettings, setPrivacySettings] = useState({
     profileVisibility: 'everyone',
     contentVisibility: 'everyone',
@@ -656,15 +660,44 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
   const handleSaveNotifications = async () => {
     if (!db || !user?.uid) return;
 
+    setNotificationSaveStatus('saving');
     try {
       await updateDoc(doc(db, 'userSettings', user.uid), {
         notifications: notificationSettings,
         updatedAt: new Date(),
       });
-      alert('Notification settings saved!');
+      setNotificationSaveStatus('saved');
+      setTimeout(() => setNotificationSaveStatus('idle'), 2000);
     } catch (error) {
       console.error('Error updating notifications:', error);
-      alert('Failed to save settings. Please try again.');
+      setNotificationSaveStatus('error');
+      setTimeout(() => setNotificationSaveStatus('idle'), 3000);
+    }
+  };
+
+  const testNotification = () => {
+    if ('Notification' in window) {
+      if (Notification.permission === 'granted') {
+        new Notification('Test Notification', {
+          body: 'This is how your notifications will appear',
+          icon: '/logo.png',
+          badge: '/logo.png',
+        });
+      } else if (Notification.permission === 'default') {
+        Notification.requestPermission().then((permission) => {
+          if (permission === 'granted') {
+            new Notification('Test Notification', {
+              body: 'This is how your notifications will appear',
+              icon: '/logo.png',
+              badge: '/logo.png',
+            });
+          }
+        });
+      } else {
+        alert('Please enable browser notifications in your browser settings');
+      }
+    } else {
+      alert('Your browser does not support notifications');
     }
   };
 
@@ -1993,7 +2026,7 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
                     });
                     
                     return (
-                      <div key={post.id} className="flex items-start space-x-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-750 transition-colors">
+                      <div key={post.id} className="flex items-start space-x-4 p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
                         <img
                           src={post.authorImage || userProfile?.photoURL || 'https://placehold.co/100x100'}
                           alt="Profile"
@@ -2419,14 +2452,14 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
                   <button
                     key={item.id}
                     onClick={() => setSettingsTab(item.id)}
-                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-colors ${
+                    className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg transition-all duration-200 text-base font-medium ${
                       settingsTab === item.id
-                        ? 'bg-pink-600 text-white'
+                        ? 'bg-pink-600 text-white shadow-lg shadow-pink-600/30'
                         : 'text-gray-400 hover:bg-gray-800 hover:text-white'
                     }`}
                   >
                     <span className="text-xl">{item.icon}</span>
-                    <span className="font-medium">{item.label}</span>
+                    <span>{item.label}</span>
                   </button>
                 ))}
               </nav>
@@ -2536,8 +2569,30 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
               {/* Notifications Settings - Matching Image 6 */}
               {settingsTab === 'notifications' && (
                 <div className="space-y-6">
-                  <h3 className="text-2xl font-bold text-white">Email Notifications</h3>
+                  <h3 className="text-2xl font-bold text-white">Notifications</h3>
                   
+                  {/* Browser Notification Permission Banner */}
+                  {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'default' && (
+                    <div className="bg-blue-900/30 border border-blue-600 rounded-lg p-4 flex items-center justify-between">
+                      <div>
+                        <h4 className="text-white font-semibold text-base mb-1.5">Enable Browser Notifications</h4>
+                        <p className="text-gray-400 text-sm leading-relaxed">Get real-time notifications even when you're not on the site</p>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          const permission = await Notification.requestPermission();
+                          if (permission === 'granted') {
+                            alert('Notifications enabled!');
+                          }
+                        }}
+                        className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-sm font-medium transition-colors"
+                      >
+                        Enable
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Main Notification Settings */}
                   <div className="bg-gray-900 rounded-xl p-6 space-y-4">
                     {[
                       { key: 'newPurchases', title: 'New purchases', description: 'Get notified when someone buys your content' },
@@ -2545,10 +2600,10 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
                       { key: 'newFollowers', title: 'New followers', description: 'Get notified when someone follows you' },
                       { key: 'tipsGifts', title: 'Tips & Gifts', description: 'Get notified when you receive tips or gifts' },
                     ].map((item) => (
-                      <div key={item.key} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
-                        <div>
-                          <h4 className="text-white font-medium mb-1">{item.title}</h4>
-                          <p className="text-gray-400 text-sm">{item.description}</p>
+                      <div key={item.key} className="flex items-center justify-between p-4 bg-gray-800 rounded-lg hover:bg-gray-700 transition-colors">
+                        <div className="flex-1">
+                          <h4 className="text-white font-semibold text-base mb-1.5">{item.title}</h4>
+                          <p className="text-gray-400 text-sm leading-relaxed">{item.description}</p>
                         </div>
                         <button
                           onClick={() => setNotificationSettings({
@@ -2569,14 +2624,159 @@ const CreatorStudio: React.FC<CreatorStudioProps> = ({ onClose, user, userProfil
                     ))}
                   </div>
 
+                  {/* Additional Settings */}
+                  <div className="bg-gray-900 rounded-xl p-6 space-y-4">
+                    <h4 className="text-white font-semibold text-lg mb-4">Additional Preferences</h4>
+                    
+                    {/* Sound Notifications */}
+                    <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                      <div>
+                        <h4 className="text-white font-semibold text-base mb-1.5">Sound Notifications</h4>
+                        <p className="text-gray-400 text-sm leading-relaxed">Play sound when receiving notifications</p>
+                      </div>
+                      <button
+                        onClick={() => setNotificationSettings({
+                          ...notificationSettings,
+                          soundEnabled: !notificationSettings.soundEnabled
+                        })}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          notificationSettings.soundEnabled ? 'bg-pink-600' : 'bg-gray-700'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                            notificationSettings.soundEnabled ? 'translate-x-6' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
+
+                    {/* Email Digest */}
+                    <div className="flex items-center justify-between p-4 bg-gray-800 rounded-lg">
+                      <div className="flex-1">
+                        <h4 className="text-white font-semibold text-base mb-1.5">Email Digest</h4>
+                        <p className="text-gray-400 text-sm leading-relaxed">Receive a summary of notifications via email</p>
+                      </div>
+                      <select
+                        value={notificationSettings.emailDigest}
+                        onChange={(e) => setNotificationSettings({
+                          ...notificationSettings,
+                          emailDigest: e.target.value
+                        })}
+                        className="bg-gray-700 text-white text-sm rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-pink-600 ml-4"
+                      >
+                        <option value="none">None</option>
+                        <option value="daily">Daily</option>
+                        <option value="weekly">Weekly</option>
+                      </select>
+                    </div>
+
+                    {/* Quiet Hours */}
+                    <div className="p-4 bg-gray-800 rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="text-white font-semibold text-base mb-1.5">Quiet Hours</h4>
+                          <p className="text-gray-400 text-sm leading-relaxed">Pause notifications during specific hours</p>
+                        </div>
+                        <button
+                          onClick={() => setNotificationSettings({
+                            ...notificationSettings,
+                            quietHours: { ...notificationSettings.quietHours, enabled: !notificationSettings.quietHours.enabled }
+                          })}
+                          className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                            notificationSettings.quietHours.enabled ? 'bg-pink-600' : 'bg-gray-700'
+                          }`}
+                        >
+                          <span
+                            className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                              notificationSettings.quietHours.enabled ? 'translate-x-6' : 'translate-x-1'
+                            }`}
+                          />
+                        </button>
+                      </div>
+                      {notificationSettings.quietHours.enabled && (
+                        <div className="flex items-center space-x-3 pt-2">
+                          <div className="flex-1">
+                            <label className="block text-gray-400 text-xs mb-1">Start Time</label>
+                            <input
+                              type="time"
+                              value={notificationSettings.quietHours.start}
+                              onChange={(e) => setNotificationSettings({
+                                ...notificationSettings,
+                                quietHours: { ...notificationSettings.quietHours, start: e.target.value }
+                              })}
+                              className="w-full bg-gray-700 text-white text-sm rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            />
+                          </div>
+                          <div className="flex-1">
+                            <label className="block text-gray-400 text-xs mb-1">End Time</label>
+                            <input
+                              type="time"
+                              value={notificationSettings.quietHours.end}
+                              onChange={(e) => setNotificationSettings({
+                                ...notificationSettings,
+                                quietHours: { ...notificationSettings.quietHours, end: e.target.value }
+                              })}
+                              className="w-full bg-gray-700 text-white text-sm rounded-lg py-2 px-3 focus:outline-none focus:ring-2 focus:ring-pink-600"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Test Notification Button */}
+                  {typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted' && (
+                    <button
+                      onClick={testNotification}
+                      className="w-full px-4 py-2 bg-gray-800 hover:bg-gray-700 text-white text-sm font-medium rounded-lg transition-colors flex items-center justify-center space-x-2"
+                    >
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                      </svg>
+                      <span>Test Notification</span>
+                    </button>
+                  )}
+
+                  {/* Save Button with Status */}
                   <button
                     onClick={handleSaveNotifications}
-                    className="px-6 py-3 bg-pink-600 hover:bg-pink-700 text-white font-semibold rounded-lg transition-colors flex items-center space-x-2"
+                    disabled={notificationSaveStatus === 'saving'}
+                    className={`w-full px-6 py-3 text-white font-semibold rounded-lg transition-all flex items-center justify-center space-x-2 ${
+                      notificationSaveStatus === 'saved' 
+                        ? 'bg-green-600 hover:bg-green-700' 
+                        : notificationSaveStatus === 'error'
+                        ? 'bg-red-600 hover:bg-red-700'
+                        : 'bg-pink-600 hover:bg-pink-700'
+                    } ${notificationSaveStatus === 'saving' ? 'opacity-75 cursor-wait' : ''}`}
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
-                    </svg>
-                    <span>Save Changes</span>
+                    {notificationSaveStatus === 'saving' && (
+                      <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    )}
+                    {notificationSaveStatus === 'saved' && (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                    )}
+                    {notificationSaveStatus === 'error' && (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    )}
+                    {notificationSaveStatus === 'idle' && (
+                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4" />
+                      </svg>
+                    )}
+                    <span>
+                      {notificationSaveStatus === 'saving' 
+                        ? 'Saving...' 
+                        : notificationSaveStatus === 'saved' 
+                        ? 'Saved!' 
+                        : notificationSaveStatus === 'error'
+                        ? 'Error - Try Again'
+                        : 'Save Changes'}
+                    </span>
                   </button>
                 </div>
               )}
